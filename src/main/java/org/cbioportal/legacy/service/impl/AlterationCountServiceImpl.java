@@ -273,12 +273,12 @@ public class AlterationCountServiceImpl implements AlterationCountService {
                     List<S> studyAlterationCountByGenes = dataFetcher.apply(studyMolecularProfileCaseIdentifiers);
 
                     if (includeFrequency) {
-                        // This call will set matchingGenePanelIds for each alteration count
+                        // This call to the includeFrequencyFunction will set matchingGenePanelIds for each alteration count
                         Long studyProfiledCasesCount = includeFrequencyFunction.apply(studyMolecularProfileCaseIdentifiers, studyAlterationCountByGenes);
                         profiledCasesCount.updateAndGet(v -> v + studyProfiledCasesCount);
                     }
 
-                    // Filter out genes not covered by gene panels in this study
+                    // Filter out alteration counts for "off-panel" genes -- genes which are not profiled by a gene panel in this study
                     List<S> filteredStudyAlterationCountByGenes = studyAlterationCountByGenes.stream()
                         .filter(gene -> !gene.getMatchingGenePanelIds().isEmpty())
                         .toList();
