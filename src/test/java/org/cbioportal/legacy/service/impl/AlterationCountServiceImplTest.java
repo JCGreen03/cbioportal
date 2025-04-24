@@ -12,7 +12,6 @@ import org.cbioportal.legacy.model.MutationEventType;
 import org.cbioportal.legacy.model.util.Select;
 import org.cbioportal.legacy.persistence.AlterationRepository;
 import org.cbioportal.legacy.persistence.MolecularProfileRepository;
-import org.cbioportal.legacy.service.exception.MolecularProfileNotFoundException;
 import org.cbioportal.legacy.service.util.AlterationEnrichmentUtil;
 import org.cbioportal.legacy.service.util.MolecularProfileUtil;
 import org.junit.Assert;
@@ -29,6 +28,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.TreeSet;
 
 import static org.mockito.Mockito.anyBoolean;
@@ -159,6 +159,15 @@ public class AlterationCountServiceImplTest extends BaseServiceImplTest {
             entrezGeneIds,
             alterationFilter)).thenReturn(expectedCountByGeneList);
 
+        // Mock frequency calculation specific to this service call path
+        String mockPanelId = "panel_from_mock_sample_mut";
+        when(alterationEnrichmentUtil.includeFrequencyForSamples(anyList(), anyList(), anyBoolean()))
+            .thenAnswer(invocation -> {
+                List<AlterationCountByGene> counts = invocation.getArgument(1);
+                counts.forEach(count -> count.setMatchingGenePanelIds(new HashSet<>(Set.of(mockPanelId))));
+                return 1L;
+            });
+
         Pair<List<AlterationCountByGene>, Long> result = alterationCountService.getSampleMutationGeneCounts(
             caseIdentifiers,
             entrezGeneIds,
@@ -166,18 +175,30 @@ public class AlterationCountServiceImplTest extends BaseServiceImplTest {
             includeMissingAlterationsFromGenePanel,
             alterationFilter);
 
-        Assert.assertEquals(expectedCountByGeneList, result.getFirst());
-
+        Assert.assertEquals("List size should be 1", 1, result.getFirst().size());
+        AlterationCountByGene actualObject = result.getFirst().getFirst();
+        Assert.assertEquals(expectedCountByGeneList.getFirst().getEntrezGeneId(), actualObject.getEntrezGeneId());
+        Assert.assertFalse("Panel IDs should not be empty", actualObject.getMatchingGenePanelIds().isEmpty());
+        Assert.assertTrue("Panel IDs should contain mock ID", actualObject.getMatchingGenePanelIds().contains(mockPanelId));
     }
 
     @Test
-    public void getPatientMutationGeneCounts() throws MolecularProfileNotFoundException {
+    public void getPatientMutationGeneCounts() {
 
         // this mock tests correct argument types
         when(alterationRepository.getPatientAlterationGeneCounts(
             new HashSet<>(caseIdentifiers),
             entrezGeneIds,
             alterationFilter)).thenReturn(expectedCountByGeneList);
+
+        // Mock frequency calculation
+        String mockPanelId = "panel_from_mock_patient_mut";
+        when(alterationEnrichmentUtil.includeFrequencyForPatients(anyList(), anyList(), anyBoolean()))
+            .thenAnswer(invocation -> {
+                List<AlterationCountByGene> counts = invocation.getArgument(1);
+                counts.forEach(count -> count.setMatchingGenePanelIds(new HashSet<>(Set.of(mockPanelId))));
+                return 1L;
+            });
 
         Pair<List<AlterationCountByGene>, Long> result = alterationCountService.getPatientMutationGeneCounts(
             caseIdentifiers,
@@ -186,8 +207,11 @@ public class AlterationCountServiceImplTest extends BaseServiceImplTest {
             includeMissingAlterationsFromGenePanel,
             alterationFilter);
 
-        Assert.assertEquals(expectedCountByGeneList, result.getFirst());
-
+        Assert.assertEquals("List size should be 1", 1, result.getFirst().size());
+        AlterationCountByGene actualObject = result.getFirst().getFirst();
+        Assert.assertEquals(expectedCountByGeneList.getFirst().getEntrezGeneId(), actualObject.getEntrezGeneId());
+        Assert.assertFalse("Panel IDs should not be empty", actualObject.getMatchingGenePanelIds().isEmpty());
+        Assert.assertTrue("Panel IDs should contain mock ID", actualObject.getMatchingGenePanelIds().contains(mockPanelId));
     }
 
     @Test
@@ -199,6 +223,15 @@ public class AlterationCountServiceImplTest extends BaseServiceImplTest {
             entrezGeneIds,
             alterationFilter)).thenReturn(expectedCnaCountByGeneList);
 
+        // Mock frequency calculation for CNA util
+        String mockPanelId = "panel_from_mock_sample_cna";
+        when(alterationEnrichmentUtilCna.includeFrequencyForSamples(anyList(), anyList(), anyBoolean()))
+            .thenAnswer(invocation -> {
+                List<CopyNumberCountByGene> counts = invocation.getArgument(1);
+                counts.forEach(count -> count.setMatchingGenePanelIds(new HashSet<>(Set.of(mockPanelId))));
+                return 1L;
+            });
+
         Pair<List<CopyNumberCountByGene>, Long> result = alterationCountService.getSampleCnaGeneCounts(
             caseIdentifiers,
             entrezGeneIds,
@@ -206,9 +239,12 @@ public class AlterationCountServiceImplTest extends BaseServiceImplTest {
             includeMissingAlterationsFromGenePanel,
             alterationFilter);
 
-        verify(alterationEnrichmentUtilCna, times(1)).includeFrequencyForSamples(anyList(), anyList(), anyBoolean());
-        Assert.assertEquals(expectedCnaCountByGeneList, result.getFirst());
-        
+        Assert.assertEquals("List size should be 1", 1, result.getFirst().size());
+        CopyNumberCountByGene actualObject = result.getFirst().getFirst();
+        Assert.assertEquals(expectedCnaCountByGeneList.getFirst().getEntrezGeneId(), actualObject.getEntrezGeneId());
+        Assert.assertEquals(expectedCnaCountByGeneList.getFirst().getAlteration(), actualObject.getAlteration());
+        Assert.assertFalse("Panel IDs should not be empty", actualObject.getMatchingGenePanelIds().isEmpty());
+        Assert.assertTrue("Panel IDs should contain mock ID", actualObject.getMatchingGenePanelIds().contains(mockPanelId));
     }
 
     @Test
@@ -220,6 +256,14 @@ public class AlterationCountServiceImplTest extends BaseServiceImplTest {
             entrezGeneIds,
             alterationFilter)).thenReturn(expectedCnaCountByGeneList);
 
+        // Mock frequency calculation for CNA util
+        String mockPanelId = "panel_from_mock_patient_cna";
+        when(alterationEnrichmentUtilCna.includeFrequencyForPatients(anyList(), anyList(), anyBoolean()))
+            .thenAnswer(invocation -> {
+                List<CopyNumberCountByGene> counts = invocation.getArgument(1);
+                counts.forEach(count -> count.setMatchingGenePanelIds(new HashSet<>(Set.of(mockPanelId))));
+                return 1L;
+            });
 
         Pair<List<CopyNumberCountByGene>, Long> result = alterationCountService.getPatientCnaGeneCounts(
             caseIdentifiers,
@@ -228,8 +272,12 @@ public class AlterationCountServiceImplTest extends BaseServiceImplTest {
             includeMissingAlterationsFromGenePanel,
             alterationFilter);
 
-        verify(alterationEnrichmentUtilCna, times(1)).includeFrequencyForPatients(anyList(), anyList(), anyBoolean());
-        Assert.assertEquals(expectedCnaCountByGeneList, result.getFirst());
+        Assert.assertEquals("List size should be 1", 1, result.getFirst().size());
+        CopyNumberCountByGene actualObject = result.getFirst().getFirst();
+        Assert.assertEquals(expectedCnaCountByGeneList.getFirst().getEntrezGeneId(), actualObject.getEntrezGeneId());
+        Assert.assertEquals(expectedCnaCountByGeneList.getFirst().getAlteration(), actualObject.getAlteration());
+        Assert.assertFalse("Panel IDs should not be empty", actualObject.getMatchingGenePanelIds().isEmpty());
+        Assert.assertTrue("Panel IDs should contain mock ID", actualObject.getMatchingGenePanelIds().contains(mockPanelId));
     }
 
     @Test
@@ -239,14 +287,26 @@ public class AlterationCountServiceImplTest extends BaseServiceImplTest {
             new TreeSet<>(caseIdentifiers),
             alterationFilter)).thenReturn(expectedStructuralVariantList);
 
+        // Mock frequency calculation for StructVar util
+        String mockPanelId = "panel_from_mock_sample_sv";
+        when(alterationEnrichmentUtilStructVar.includeFrequencyForSamples(anyList(), anyList(), anyBoolean()))
+            .thenAnswer(invocation -> {
+                List<AlterationCountByStructuralVariant> counts = invocation.getArgument(1);
+                counts.forEach(count -> count.setMatchingGenePanelIds(new HashSet<>(Set.of(mockPanelId))));
+                return 1L;
+            });
+
         Pair<List<AlterationCountByStructuralVariant>, Long> result = alterationCountService.getSampleStructuralVariantCounts(
             caseIdentifiers,
             includeFrequency,
             includeMissingAlterationsFromGenePanel,
             alterationFilter);
 
-        verify(alterationEnrichmentUtilStructVar, times(1)).includeFrequencyForSamples(anyList(), anyList(), anyBoolean());
-        Assert.assertEquals(expectedStructuralVariantList, result.getFirst());
-
+        Assert.assertEquals("List size should be 1", 1, result.getFirst().size());
+        AlterationCountByStructuralVariant actualObject = result.getFirst().getFirst();
+        Assert.assertEquals(expectedStructuralVariantList.getFirst().getGene1EntrezGeneId(), actualObject.getGene1EntrezGeneId());
+        Assert.assertEquals(expectedStructuralVariantList.getFirst().getGene2EntrezGeneId(), actualObject.getGene2EntrezGeneId());
+        Assert.assertFalse("Panel IDs should not be empty", actualObject.getMatchingGenePanelIds().isEmpty());
+        Assert.assertTrue("Panel IDs should contain mock ID", actualObject.getMatchingGenePanelIds().contains(mockPanelId));
     }
 }

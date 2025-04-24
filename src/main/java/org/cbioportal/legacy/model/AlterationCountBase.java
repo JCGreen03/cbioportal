@@ -1,6 +1,7 @@
 package org.cbioportal.legacy.model;
 
 import java.io.Serializable;
+import java.util.HashSet;
 import java.util.Set;
 
 public abstract class AlterationCountBase implements Serializable {
@@ -8,7 +9,7 @@ public abstract class AlterationCountBase implements Serializable {
     private Integer numberOfAlteredCases;
     private Integer totalCount;
     private Integer numberOfProfiledCases;
-    private Set<String> matchingGenePanelIds;
+    private Set<String> matchingGenePanelIds = new HashSet<>();
 
     public Integer getNumberOfAlteredCases() {
         return numberOfAlteredCases;

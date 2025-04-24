@@ -167,35 +167,6 @@ public class AlterationCountServiceImpl implements AlterationCountService {
         );
     }
 
-// -- Should be reinstated when the legacy CNA count endpoint retires            
-//    @Override
-//    public List<AlterationCountByGene> getSampleCnaCounts(List<MolecularProfileCaseIdentifier> molecularProfileCaseIdentifiers,
-//                                                          Select<Integer> entrezGeneIds,
-//                                                          boolean includeFrequency,
-//                                                          boolean includeMissingAlterationsFromGenePanel,
-//                                                          AlterationEventTypeFilter alterationFilter) {
-//        return getSampleAlterationCounts(molecularProfileCaseIdentifiers,
-//            entrezGeneIds,
-//            includeFrequency,
-//            includeMissingAlterationsFromGenePanel,
-//            new ArrayList<>(),
-//            alterationFilter);
-//    }
-//
-//    @Override
-//    public List<AlterationCountByGene> getPatientCnaCounts(List<MolecularProfileCaseIdentifier> molecularProfileCaseIdentifiers,
-//                                                           List<Integer> entrezGeneIds,
-//                                                           boolean includeFrequency,
-//                                                           boolean includeMissingAlterationsFromGenePanel,
-//                                                           AlterationEventTypeFilter alterationFilter) {
-//        return getPatientAlterationCounts(molecularProfileCaseIdentifiers,
-//            entrezGeneIds,
-//            includeFrequency,
-//            includeMissingAlterationsFromGenePanel,
-//            new ArrayList<>(),
-//            alterationFilter);
-//    }
-
     @Override
     public Pair<List<CopyNumberCountByGene>, Long> getSampleCnaGeneCounts(List<MolecularProfileCaseIdentifier> molecularProfileCaseIdentifiers,
                                                                           Select<Integer> entrezGeneIds,
@@ -208,8 +179,6 @@ public class AlterationCountServiceImpl implements AlterationCountService {
 
         BiFunction<List<MolecularProfileCaseIdentifier>, List<CopyNumberCountByGene>, Long> includeFrequencyFunction =
             (a, b) -> alterationEnrichmentUtilCna.includeFrequencyForSamples(a, b, includeMissingAlterationsFromGenePanel);
-
-        Function<CopyNumberCountByGene, String> keyGenerator = d -> d.getEntrezGeneId().toString() + d.getAlteration().toString();
 
         return getAlterationGeneCounts(
             molecularProfileCaseIdentifiers,
@@ -231,8 +200,6 @@ public class AlterationCountServiceImpl implements AlterationCountService {
 
         BiFunction<List<MolecularProfileCaseIdentifier>, List<CopyNumberCountByGene>, Long> includeFrequencyFunction =
             (a, b) -> alterationEnrichmentUtilCna.includeFrequencyForPatients(a, b, includeMissingAlterationsFromGenePanel);
-
-        Function<CopyNumberCountByGene, String> keyGenerator = d -> d.getEntrezGeneId().toString() + d.getAlteration().toString();
 
         return getAlterationGeneCounts(
             molecularProfileCaseIdentifiers,
